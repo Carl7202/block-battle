@@ -1,0 +1,2024 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Block Battle</title>
+
+<style>
+*{box-sizing:border-box}
+
+html,body{
+    margin:0;
+    width:100%;
+    height:100%;
+    overflow:hidden;
+    font-family:Arial,sans-serif;
+    background:#79cfff;
+    user-select:none
+}
+
+canvas{
+    display:block
+}
+
+.screen{
+    position:fixed;
+    inset:0;
+    z-index:100;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background:
+        radial-gradient(
+            circle at center,
+            #31547e,
+            #0b1220 75%
+        );
+    color:white
+}
+
+.card{
+    width:min(620px,92%);
+    padding:40px;
+    background:rgba(10,16,28,.97);
+    border:2px solid rgba(255,255,255,.2);
+    border-radius:24px;
+    text-align:center;
+    box-shadow:0 30px 100px #0008
+}
+
+h1{
+    margin:0;
+    font-size:58px;
+    font-weight:900
+}
+
+h2{
+    margin:10px 0
+}
+
+p{
+    color:#bbb
+}
+
+input{
+    width:100%;
+    padding:15px;
+    margin:7px 0;
+    border:0;
+    border-radius:10px;
+    font-size:18px;
+    text-align:center;
+    outline:none
+}
+
+button{
+    width:100%;
+    padding:15px;
+    margin-top:10px;
+    border:0;
+    border-radius:10px;
+    background:#ff9632;
+    color:white;
+    font-size:19px;
+    font-weight:bold;
+    cursor:pointer
+}
+
+button:hover{
+    filter:brightness(1.12);
+    transform:translateY(-1px)
+}
+
+.secondary{
+    background:#3a475d
+}
+
+.hidden{
+    display:none!important
+}
+
+#status{
+    min-height:24px;
+    margin-top:12px;
+    color:#ffd166
+}
+
+#connection{
+    color:#8795aa;
+    margin-top:10px;
+    font-size:14px
+}
+
+#players{
+    margin-top:20px;
+    text-align:left;
+    max-height:260px;
+    overflow:auto
+}
+
+.player{
+    display:flex;
+    justify-content:space-between;
+    padding:13px;
+    margin:6px 0;
+    border-radius:10px;
+    background:#202c42
+}
+
+.ready{
+    color:#57ea8c;
+    font-weight:bold
+}
+
+.notready{
+    color:#ffd166;
+    font-weight:bold
+}
+
+#hud{
+    position:fixed;
+    inset:0;
+    z-index:10;
+    pointer-events:none;
+    color:white;
+    text-shadow:0 2px 4px #000
+}
+
+#score{
+    position:absolute;
+    left:20px;
+    top:18px;
+    font-size:21px;
+    font-weight:bold
+}
+
+#online{
+    position:absolute;
+    left:20px;
+    top:48px
+}
+
+#weapon{
+    position:absolute;
+    right:20px;
+    bottom:70px;
+    font-size:20px;
+    font-weight:bold
+}
+
+#ammo{
+    position:absolute;
+    right:20px;
+    bottom:25px;
+    font-size:30px;
+    font-weight:bold
+}
+
+#healthBox{
+    position:absolute;
+    left:20px;
+    bottom:20px;
+    width:260px
+}
+
+#healthBack{
+    height:18px;
+    background:#222;
+    border:2px solid white;
+    margin-top:4px
+}
+
+#health{
+    width:100%;
+    height:100%;
+    background:#39dd60
+}
+
+#crosshair{
+    position:absolute;
+    left:50%;
+    top:50%;
+    width:20px;
+    height:20px;
+    transform:translate(-50%,-50%)
+}
+
+#crosshair:before,
+#crosshair:after{
+    content:"";
+    position:absolute;
+    background:white;
+    box-shadow:0 0 3px black
+}
+
+#crosshair:before{
+    width:2px;
+    height:20px;
+    left:9px
+}
+
+#crosshair:after{
+    width:20px;
+    height:2px;
+    top:9px
+}
+
+#notice{
+    position:absolute;
+    left:50%;
+    top:67%;
+    transform:translate(-50%,-50%);
+    font-size:34px;
+    font-weight:bold
+}
+
+#chat{
+    position:absolute;
+    left:20px;
+    bottom:100px;
+    width:320px;
+    pointer-events:auto
+}
+
+#messages{
+    height:130px;
+    overflow:hidden;
+    padding:8px;
+    background:#0006;
+    border-radius:10px;
+    font-size:14px
+}
+
+#chatInput{
+    display:none;
+    margin-top:5px;
+    width:100%;
+    padding:9px;
+    text-align:left;
+    font-size:14px
+}
+
+.chatLine{
+    margin:3px 0
+}
+
+#damage{
+    position:absolute;
+    inset:0;
+    background:#f00;
+    opacity:0;
+    transition:.1s
+}
+</style>
+</head>
+
+<body>
+
+<!-- MENU -->
+
+<div id="menu" class="screen">
+
+<div class="card">
+
+<h1>BLOCK BATTLE</h1>
+
+<p>ONLINE THIRD-PERSON BATTLE</p>
+
+<input
+    id="name"
+    maxlength="16"
+    placeholder="Your username"
+>
+
+<button id="createBtn">
+    CREATE LOBBY
+</button>
+
+<button
+    id="showJoinBtn"
+    class="secondary"
+>
+    JOIN LOBBY
+</button>
+
+<div id="joinArea" class="hidden">
+
+<input
+    id="roomCode"
+    maxlength="6"
+    placeholder="ROOM CODE"
+>
+
+<button id="joinBtn">
+    JOIN
+</button>
+
+</div>
+
+<div id="status"></div>
+
+<div id="connection">
+    Connecting to server...
+</div>
+
+</div>
+
+</div>
+
+
+<!-- LOBBY -->
+
+<div id="lobby" class="screen hidden">
+
+<div class="card">
+
+<h1>LOBBY</h1>
+
+<h2>
+ROOM:
+<span id="roomDisplay">------</span>
+</h2>
+
+<p>
+Send the code to your friends.
+</p>
+
+<div id="players"></div>
+
+<button id="readyBtn">
+READY
+</button>
+
+<button
+    id="startBtn"
+    class="hidden"
+>
+START GAME
+</button>
+
+<button
+    id="leaveBtn"
+    class="secondary"
+>
+LEAVE
+</button>
+
+</div>
+
+</div>
+
+
+<!-- HUD -->
+
+<div id="hud" class="hidden">
+
+<div id="score">
+ELIMINATIONS: 0
+</div>
+
+<div id="online">
+PLAYERS: 1
+</div>
+
+<div id="weapon">
+DUAL PISTOLS
+</div>
+
+<div id="ammo">
+16 / 16
+</div>
+
+<div id="healthBox">
+HEALTH <span id="healthValue">100</span>
+
+<div id="healthBack">
+<div id="health"></div>
+</div>
+
+</div>
+
+<div id="crosshair"></div>
+
+<div id="notice"></div>
+
+<div id="damage"></div>
+
+<div id="chat">
+
+<div id="messages"></div>
+
+<input
+    id="chatInput"
+    placeholder="Press Enter to chat..."
+    maxlength="100"
+>
+
+</div>
+
+</div>
+
+
+<script src="/socket.io/socket.io.js"></script>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+
+<script>
+
+const socket=io();
+
+let scene;
+let camera;
+let renderer;
+let clock;
+
+let myId=null;
+let room="";
+let username="";
+
+let localPlayer=null;
+
+const remotePlayers=new Map();
+
+const keys={};
+
+let gameStarted=false;
+
+let yaw=0;
+let pitch=-.18;
+
+let velX=0;
+let velZ=0;
+let velY=0;
+
+let grounded=true;
+
+let health=100;
+let score=0;
+
+let weapon=1;
+let ammo=16;
+
+let lastShot=0;
+
+let obstacles=[];
+
+const weaponData={
+
+1:{
+    name:"DUAL PISTOLS",
+    magazine:16,
+    damage:25,
+    cooldown:180
+},
+
+2:{
+    name:"DUAL UZIS",
+    magazine:30,
+    damage:9,
+    cooldown:80
+},
+
+3:{
+    name:"SHOTGUN",
+    magazine:6,
+    damage:40,
+    cooldown:700
+
+}
+
+};
+
+const menu=
+document.getElementById("menu");
+
+const lobby=
+document.getElementById("lobby");
+
+const hud=
+document.getElementById("hud");
+
+const status=
+document.getElementById("status");
+
+const playersBox=
+document.getElementById("players");
+
+const notice=
+document.getElementById("notice");
+
+const messages=
+document.getElementById("messages");
+
+init();
+
+
+/* ---------------- SOCKET ---------------- */
+
+socket.on("connect",()=>{
+
+    myId=socket.id;
+
+    document.getElementById(
+        "connection"
+    ).textContent=
+        "Connected ✓";
+
+});
+
+socket.on("disconnect",()=>{
+
+    document.getElementById(
+        "connection"
+    ).textContent=
+        "Disconnected";
+
+});
+
+
+socket.on("roomCreated",data=>{
+
+    room=data.room;
+
+    showLobby();
+
+});
+
+
+socket.on("roomJoined",data=>{
+
+    room=data.room;
+
+    showLobby();
+
+});
+
+
+socket.on("errorMessage",msg=>{
+
+    status.textContent=msg;
+
+});
+
+
+socket.on("lobby",data=>{
+
+    renderLobby(data);
+
+});
+
+
+socket.on("gameStart",data=>{
+
+    startGame(data);
+
+});
+
+
+socket.on("playerJoined",data=>{
+
+    addRemotePlayer(data);
+
+});
+
+
+socket.on("playerLeft",id=>{
+
+    removeRemotePlayer(id);
+
+});
+
+
+socket.on("playerState",data=>{
+
+    updateRemotePlayer(data);
+
+});
+
+
+socket.on("playersCount",count=>{
+
+    document.getElementById(
+        "online"
+    ).textContent=
+        "PLAYERS: "+count;
+
+});
+
+
+socket.on("chat",data=>{
+
+    addChat(
+        data.name,
+        data.message
+    );
+
+});
+
+
+socket.on("damage",data=>{
+
+    if(data.target!==myId)
+        return;
+
+    health-=data.amount;
+
+    health=Math.max(
+        0,
+        health
+    );
+
+    updateHealth();
+
+    damageScreen();
+
+    if(health<=0){
+
+        health=100;
+
+        localPlayer.position.set(
+            0,
+            0,
+            0
+        );
+
+        socket.emit(
+            "respawn",
+            {
+                room,
+                x:0,
+                y:0,
+                z:0
+            }
+        );
+
+    }
+
+});
+
+
+socket.on("score",data=>{
+
+    if(data.id===myId){
+
+        score=data.score;
+
+        document.getElementById(
+            "score"
+        ).textContent=
+            "ELIMINATIONS: "+score;
+
+    }
+
+});
+
+
+/* ---------------- MENU ---------------- */
+
+document.getElementById(
+    "showJoinBtn"
+).onclick=()=>{
+
+    document.getElementById(
+        "joinArea"
+    ).classList.remove("hidden");
+
+};
+
+
+document.getElementById(
+    "createBtn"
+).onclick=()=>{
+
+    username=getUsername();
+
+    if(!username)
+        return;
+
+    socket.emit(
+        "createRoom",
+        {
+            name:username
+        }
+    );
+
+};
+
+
+document.getElementById(
+    "joinBtn"
+).onclick=()=>{
+
+    username=getUsername();
+
+    const code=
+        document.getElementById(
+            "roomCode"
+        ).value
+        .trim()
+        .toUpperCase();
+
+    if(!username){
+
+        status.textContent=
+            "Enter a username.";
+
+        return;
+
+    }
+
+    if(code.length!==6){
+
+        status.textContent=
+            "Room codes are 6 characters.";
+
+        return;
+
+    }
+
+    socket.emit(
+        "joinRoom",
+        {
+            room:code,
+            name:username
+        }
+    );
+
+};
+
+
+function getUsername(){
+
+    const n=
+        document.getElementById(
+            "name"
+        ).value.trim();
+
+    if(!n){
+
+        status.textContent=
+            "Enter a username.";
+
+        return null;
+
+    }
+
+    return n;
+
+}
+
+
+function showLobby(){
+
+    menu.classList.add("hidden");
+
+    lobby.classList.remove("hidden");
+
+    document.getElementById(
+        "roomDisplay"
+    ).textContent=
+        room;
+
+}
+
+
+/* ---------------- LOBBY ---------------- */
+
+function renderLobby(data){
+
+    playersBox.innerHTML="";
+
+    data.players.forEach(p=>{
+
+        const row=
+            document.createElement("div");
+
+        row.className="player";
+
+        row.innerHTML=`
+
+        <span>
+            ${escapeHTML(p.name)}
+            ${p.host?" 👑":""}
+        </span>
+
+        <span class="${
+            p.ready
+            ?"ready"
+            :"notready"
+        }">
+
+            ${
+                p.ready
+                ?"READY"
+                :"NOT READY"
+            }
+
+        </span>
+
+        `;
+
+        playersBox.appendChild(row);
+
+    });
+
+    if(
+        data.host===myId &&
+        data.players.length>=1
+    ){
+
+        document.getElementById(
+            "startBtn"
+        ).classList.remove("hidden");
+
+    }else{
+
+        document.getElementById(
+            "startBtn"
+        ).classList.add("hidden");
+
+    }
+
+}
+
+
+document.getElementById(
+    "readyBtn"
+).onclick=()=>{
+
+    socket.emit(
+        "ready",
+        {
+            room
+        }
+    );
+
+};
+
+
+document.getElementById(
+    "startBtn"
+).onclick=()=>{
+
+    socket.emit(
+        "startGame",
+        {
+            room
+        }
+    );
+
+};
+
+
+document.getElementById(
+    "leaveBtn"
+).onclick=()=>{
+
+    socket.emit(
+        "leaveRoom"
+    );
+
+    lobby.classList.add("hidden");
+
+    menu.classList.remove("hidden");
+
+};
+
+
+/* ---------------- GAME ---------------- */
+
+function startGame(data){
+
+    gameStarted=true;
+
+    lobby.classList.add("hidden");
+
+    hud.classList.remove("hidden");
+
+    createWorld();
+
+    data.players.forEach(p=>{
+
+        if(p.id===myId){
+
+            createLocalPlayer(p);
+
+        }else{
+
+            addRemotePlayer(p);
+
+        }
+
+    });
+
+    document.body.requestPointerLock();
+
+    notice.textContent="GO!";
+
+    setTimeout(
+        ()=>notice.textContent="",
+        1200
+    );
+
+}
+
+
+function createWorld(){
+
+    const ground=
+        new THREE.Mesh(
+            new THREE.PlaneGeometry(
+                120,
+                120
+            ),
+            new THREE.MeshStandardMaterial({
+                color:0x63b94e
+            })
+        );
+
+    ground.rotation.x=-Math.PI/2;
+
+    ground.receiveShadow=true;
+
+    scene.add(ground);
+
+    const grid=
+        new THREE.GridHelper(
+            120,
+            60,
+            0x3d8137,
+            0x579a4b
+        );
+
+    grid.position.y=.01;
+
+    scene.add(grid);
+
+    const wallMat=
+        new THREE.MeshStandardMaterial({
+            color:0x596574
+        });
+
+    createObstacle(
+        120,7,1,
+        0,3.5,-60,
+        wallMat
+    );
+
+    createObstacle(
+        120,7,1,
+        0,3.5,60,
+        wallMat
+    );
+
+    createObstacle(
+        1,7,120,
+        -60,3.5,0,
+        wallMat
+    );
+
+    createObstacle(
+        1,7,120,
+        60,3.5,0,
+        wallMat
+    );
+
+    const colors=[
+        0xe85d5d,
+        0x587cff,
+        0xf2c84b,
+        0x55c98a,
+        0xa36df0
+    ];
+
+    for(let i=0;i<22;i++){
+
+        let x;
+        let z;
+
+        do{
+
+            x=Math.random()*90-45;
+            z=Math.random()*90-45;
+
+        }while(
+            Math.hypot(x,z)<14
+        );
+
+        const w=
+            4+Math.random()*6;
+
+        const h=
+            3+Math.random()*5;
+
+        const d=
+            4+Math.random()*6;
+
+        const mat=
+            new THREE.MeshStandardMaterial({
+                color:
+                    colors[
+                        Math.floor(
+                            Math.random()*
+                            colors.length
+                        )
+                    ]
+            });
+
+        createObstacle(
+            w,
+            h,
+            d,
+            x,
+            h/2,
+            z,
+            mat
+        );
+
+    }
+
+}
+
+
+function createObstacle(
+    w,
+    h,
+    d,
+    x,
+    y,
+    z,
+    material
+){
+
+    const mesh=
+        new THREE.Mesh(
+            new THREE.BoxGeometry(
+                w,h,d
+            ),
+            material
+        );
+
+    mesh.position.set(
+        x,y,z
+    );
+
+    mesh.castShadow=true;
+
+    mesh.receiveShadow=true;
+
+    scene.add(mesh);
+
+    obstacles.push({
+        minX:x-w/2,
+        maxX:x+w/2,
+        minZ:z-d/2,
+        maxZ:z+d/2
+    });
+
+}
+
+
+function createLocalPlayer(data){
+
+    localPlayer=
+        createCharacter(
+            data.color
+        );
+
+    localPlayer.position.set(
+        data.x||0,
+        data.y||0,
+        data.z||0
+    );
+
+    scene.add(
+        localPlayer
+    );
+
+}
+
+
+function addRemotePlayer(data){
+
+    if(
+        remotePlayers.has(data.id)
+    )
+        return;
+
+    const p=
+        createCharacter(
+            data.color
+        );
+
+    p.position.set(
+        data.x||0,
+        data.y||0,
+        data.z||0
+    );
+
+    p.userData.name=
+        data.name;
+
+    scene.add(p);
+
+    remotePlayers.set(
+        data.id,
+        p
+    );
+
+}
+
+
+function removeRemotePlayer(id){
+
+    const p=
+        remotePlayers.get(id);
+
+    if(!p)
+        return;
+
+    scene.remove(p);
+
+    remotePlayers.delete(id);
+
+}
+
+
+function updateRemotePlayer(data){
+
+    const p=
+        remotePlayers.get(data.id);
+
+    if(!p)
+        return;
+
+    p.position.lerp(
+        new THREE.Vector3(
+            data.x,
+            data.y,
+            data.z
+        ),
+        .35
+    );
+
+    p.rotation.y=
+        data.rotation;
+
+}
+
+
+/* ---------------- CHARACTER ---------------- */
+
+function createCharacter(color){
+
+    const group=
+        new THREE.Group();
+
+    const body=
+        new THREE.Mesh(
+            new THREE.CapsuleGeometry(
+                .48,
+                1,
+                8,
+                16
+            ),
+            new THREE.MeshStandardMaterial({
+                color:color||0x4775ff
+            })
+        );
+
+    body.position.y=1.1;
+
+    body.castShadow=true;
+
+    group.add(body);
+
+
+    const head=
+        new THREE.Mesh(
+            new THREE.SphereGeometry(
+                .4,
+                16,
+                16
+            ),
+            new THREE.MeshStandardMaterial({
+                color:0xffc49d
+            })
+        );
+
+    head.position.y=2.1;
+
+    head.castShadow=true;
+
+    group.add(head);
+
+
+    const backpack=
+        new THREE.Mesh(
+            new THREE.BoxGeometry(
+                .65,
+                .8,
+                .3
+            ),
+            new THREE.MeshStandardMaterial({
+                color:0x202a3c
+            })
+        );
+
+    backpack.position.set(
+        0,
+        1.25,
+        .4
+    );
+
+    group.add(backpack);
+
+
+    return group;
+
+}
+
+
+/* ---------------- INPUT ---------------- */
+
+function keyDown(e){
+
+    if(
+        document.activeElement.tagName==="INPUT"
+    )
+        return;
+
+    keys[e.code]=true;
+
+    if(e.code==="Digit1")
+        setWeapon(1);
+
+    if(e.code==="Digit2")
+        setWeapon(2);
+
+    if(e.code==="Digit3")
+        setWeapon(3);
+
+    if(
+        e.code==="Space" &&
+        grounded
+    ){
+
+        velY=8.5;
+
+        grounded=false;
+
+    }
+
+    if(e.code==="KeyT"){
+
+        const input=
+            document.getElementById(
+                "chatInput"
+            );
+
+        input.style.display="block";
+
+        input.focus();
+
+    }
+
+}
+
+
+document.addEventListener(
+    "keyup",
+    e=>{
+        keys[e.code]=false;
+    }
+);
+
+
+document.getElementById(
+    "chatInput"
+).addEventListener(
+    "keydown",
+    e=>{
+
+        if(e.key!=="Enter")
+            return;
+
+        const input=e.target;
+
+        const text=
+            input.value.trim();
+
+        if(text){
+
+            socket.emit(
+                "chat",
+                {
+                    room,
+                    message:text
+                }
+            );
+
+        }
+
+        input.value="";
+
+        input.style.display="none";
+
+        document.body.requestPointerLock();
+
+    }
+);
+
+
+function mouseMove(e){
+
+    if(
+        !gameStarted ||
+        document.pointerLockElement!==document.body
+    )
+        return;
+
+    yaw-=e.movementX*.0025;
+
+    pitch-=e.movementY*.002;
+
+    pitch=
+        THREE.MathUtils.clamp(
+            pitch,
+            -.85,
+            .4
+        );
+
+}
+
+
+function mouseDown(e){
+
+    if(e.button!==0)
+        return;
+
+    if(
+        !gameStarted
+    )
+        return;
+
+    if(
+        document.pointerLockElement!==document.body
+    ){
+
+        document.body.requestPointerLock();
+
+        return;
+
+    }
+
+    shoot();
+
+}
+
+
+/* ---------------- WEAPONS ---------------- */
+
+function setWeapon(id){
+
+    weapon=id;
+
+    ammo=
+        Math.min(
+            ammo,
+            weapons[id].magazine
+        );
+
+    document.getElementById(
+        "weapon"
+    ).textContent=
+        weapons[id].name;
+
+    updateAmmo();
+
+}
+
+
+function shoot(){
+
+    const w=
+        weaponData[weapon];
+
+    const now=
+        performance.now();
+
+    if(
+        now-lastShot<
+        w.cooldown
+    )
+        return;
+
+    if(ammo<=0){
+
+        reload();
+
+        return;
+
+    }
+
+    lastShot=now;
+
+    ammo--;
+
+    updateAmmo();
+
+    const direction=
+        new THREE.Vector3();
+
+    camera.getWorldDirection(
+        direction
+    );
+
+    direction.y=0;
+
+    direction.normalize();
+
+    const rotation=
+        Math.atan2(
+            direction.x,
+            direction.z
+        );
+
+    localPlayer.rotation.y=
+        rotation;
+
+    socket.emit(
+        "shoot",
+        {
+            room,
+            weapon,
+            rotation
+        }
+    );
+
+}
+
+
+function reload(){
+
+    if(
+        ammo>=
+        weaponData[weapon].magazine
+    )
+        return;
+
+    notice.textContent=
+        "RELOADING...";
+
+    setTimeout(()=>{
+
+        ammo=
+            weaponData[
+                weapon
+            ].magazine;
+
+        updateAmmo();
+
+        notice.textContent="";
+
+    },800);
+
+}
+
+
+function updateAmmo(){
+
+    document.getElementById(
+        "ammo"
+    ).textContent=
+        ammo+
+        " / "+
+        weaponData[
+            weapon
+        ].magazine;
+
+}
+
+
+/* ---------------- MOVEMENT ---------------- */
+
+function updatePlayer(dt){
+
+    if(!localPlayer)
+        return;
+
+    const input=
+        new THREE.Vector3();
+
+    if(keys.KeyW)
+        input.z-=1;
+
+    if(keys.KeyS)
+        input.z+=1;
+
+    if(keys.KeyA)
+        input.x-=1;
+
+    if(keys.KeyD)
+        input.x+=1;
+
+    if(input.lengthSq()>0)
+        input.normalize();
+
+    const forward=
+        new THREE.Vector3(
+            -Math.sin(yaw),
+            0,
+            -Math.cos(yaw)
+        );
+
+    const right=
+        new THREE.Vector3(
+            Math.cos(yaw),
+            0,
+            -Math.sin(yaw)
+        );
+
+    const move=
+        new THREE.Vector3();
+
+    move.addScaledVector(
+        forward,
+        -input.z
+    );
+
+    move.addScaledVector(
+        right,
+        input.x
+    );
+
+    if(move.lengthSq()>0)
+        move.normalize();
+
+    const speed=
+        keys.ShiftLeft||
+        keys.ShiftRight
+            ?11
+            :7;
+
+    const targetX=
+        move.x*speed;
+
+    const targetZ=
+        move.z*speed;
+
+    velX=
+        THREE.MathUtils.lerp(
+            velX,
+            targetX,
+            Math.min(1,dt*12)
+        );
+
+    velZ=
+        THREE.MathUtils.lerp(
+            velZ,
+            targetZ,
+            Math.min(1,dt*12)
+        );
+
+    const oldX=
+        localPlayer.position.x;
+
+    const oldZ=
+        localPlayer.position.z;
+
+    localPlayer.position.x+=
+        velX*dt;
+
+    if(
+        collides(
+            localPlayer.position.x,
+            localPlayer.position.z,
+            .65
+        )
+    ){
+
+        localPlayer.position.x=
+            oldX;
+
+        velX=0;
+
+    }
+
+    localPlayer.position.z+=
+        velZ*dt;
+
+    if(
+        collides(
+            localPlayer.position.x,
+            localPlayer.position.z,
+            .65
+        )
+    ){
+
+        localPlayer.position.z=
+            oldZ;
+
+        velZ=0;
+
+    }
+
+    velY-=22*dt;
+
+    localPlayer.position.y+=
+        velY*dt;
+
+    if(
+        localPlayer.position.y<=0
+    ){
+
+        localPlayer.position.y=0;
+
+        velY=0;
+
+        grounded=true;
+
+    }
+
+    localPlayer.position.x=
+        THREE.MathUtils.clamp(
+            localPlayer.position.x,
+            -58,
+            58
+        );
+
+    localPlayer.position.z=
+        THREE.MathUtils.clamp(
+            localPlayer.position.z,
+            -58,
+            58
+        );
+
+    // Character faces aim direction
+
+    const aim=
+        new THREE.Vector3();
+
+    camera.getWorldDirection(
+        aim
+    );
+
+    aim.y=0;
+
+    aim.normalize();
+
+    const targetRotation=
+        Math.atan2(
+            aim.x,
+            aim.z
+        );
+
+    let diff=
+        targetRotation-
+        localPlayer.rotation.y;
+
+    diff=
+        Math.atan2(
+            Math.sin(diff),
+            Math.cos(diff)
+        );
+
+    localPlayer.rotation.y+=
+        diff*
+        Math.min(1,dt*14);
+
+}
+
+
+/* ---------------- COLLISION ---------------- */
+
+function collides(x,z,r){
+
+    for(
+        const o of obstacles
+    ){
+
+        if(
+            x+r>o.minX &&
+            x-r<o.maxX &&
+            z+r>o.minZ &&
+            z-r<o.maxZ
+        )
+            return true;
+
+    }
+
+    return false;
+
+}
+
+
+/* ---------------- CAMERA ---------------- */
+
+function updateCamera(dt){
+
+    if(!localPlayer)
+        return;
+
+    const target=
+        new THREE.Vector3(
+            localPlayer.position.x,
+            localPlayer.position.y+1.6,
+            localPlayer.position.z
+        );
+
+    const distance=7;
+
+    const horizontal=
+        distance*
+        Math.cos(pitch);
+
+    const desired=
+        new THREE.Vector3(
+            target.x+
+                Math.sin(yaw)*
+                horizontal,
+
+            target.y-
+                Math.sin(pitch)*
+                distance,
+
+            target.z+
+                Math.cos(yaw)*
+                horizontal
+        );
+
+    camera.position.lerp(
+        desired,
+        Math.min(1,dt*12)
+    );
+
+    camera.lookAt(target);
+
+}
+
+
+/* ---------------- NETWORK STATE ---------------- */
+
+let stateTimer=0;
+
+function sendState(dt){
+
+    if(
+        !gameStarted ||
+        !localPlayer
+    )
+        return;
+
+    stateTimer+=dt;
+
+    if(stateTimer<.05)
+        return;
+
+    stateTimer=0;
+
+    socket.emit(
+        "state",
+        {
+            room,
+            x:localPlayer.position.x,
+            y:localPlayer.position.y,
+            z:localPlayer.position.z,
+            rotation:localPlayer.rotation.y
+        }
+    );
+
+}
+
+
+/* ---------------- HUD ---------------- */
+
+function updateHealth(){
+
+    document.getElementById(
+        "healthValue"
+    ).textContent=
+        Math.ceil(health);
+
+    document.getElementById(
+        "health"
+    ).style.width=
+        health+"%";
+
+}
+
+
+function damageScreen(){
+
+    damageScreenElement();
+
+}
+
+
+function damageScreenElement(){
+
+    damageScreen.style.opacity=.5;
+
+    setTimeout(
+        ()=>{
+            damageScreen.style.opacity=0
+        },
+        100
+    );
+
+}
+
+
+function addChat(name,message){
+
+    const div=
+        document.createElement("div");
+
+    div.className="chatLine";
+
+    div.innerHTML=
+        "<b>"+
+        escapeHTML(name)+
+        ":</b> "+
+        escapeHTML(message);
+
+    messages.appendChild(div);
+
+    while(
+        messages.children.length>8
+    ){
+
+        messages.removeChild(
+            messages.firstChild
+        );
+
+    }
+
+}
+
+
+function escapeHTML(text){
+
+    return text.replace(
+        /[&<>"']/g,
+        c=>({
+            "&":"&amp;",
+            "<":"&lt;",
+            ">":"&gt;",
+            '"':"&quot;",
+            "'":"&#039;"
+        }[c])
+    );
+
+}
+
+
+/* ---------------- THREE ---------------- */
+
+function initThree(){
+
+    scene=
+        new THREE.Scene();
+
+    scene.background=
+        new THREE.Color(
+            0x79cfff
+        );
+
+    scene.fog=
+        new THREE.Fog(
+            0x79cfff,
+            55,
+            130
+        );
+
+    camera=
+        new THREE.PerspectiveCamera(
+            70,
+            innerWidth/innerHeight,
+            .1,
+            200
+        );
+
+    renderer=
+        new THREE.WebGLRenderer({
+            antialias:true
+        });
+
+    renderer.setSize(
+        innerWidth,
+        innerHeight
+    );
+
+    renderer.setPixelRatio(
+        Math.min(
+            devicePixelRatio,
+            2
+        )
+    );
+
+    renderer.shadowMap.enabled=true;
+
+    document.body.appendChild(
+        renderer.domElement
+    );
+
+    clock=new THREE.Clock();
+
+    window.addEventListener(
+        "resize",
+        resize
+    );
+
+    createLights();
+
+    animate();
+
+}
+
+
+function createLights(){
+
+    scene.add(
+        new THREE.HemisphereLight(
+            0xccecff,
+            0x56734b,
+            2.2
+        )
+    );
+
+    const sun=
+        new THREE.DirectionalLight(
+            0xffffff,
+            3
+        );
+
+    sun.position.set(
+        -30,
+        55,
+        25
+    );
+
+    sun.castShadow=true;
+
+    scene.add(sun);
+
+}
+
+
+function resize(){
+
+    camera.aspect=
+        innerWidth/innerHeight;
+
+    camera.updateProjectionMatrix();
+
+    renderer.setSize(
+        innerWidth,
+        innerHeight
+    );
+
+}
+
+
+function animate(){
+
+    requestAnimationFrame(
+        animate
+    );
+
+    const dt=
+        Math.min(
+            clock.getDelta(),
+            .05
+        );
+
+    if(gameStarted){
+
+        updatePlayer(dt);
+
+        updateCamera(dt);
+
+        sendState(dt);
+
+    }
+
+    renderer.render(
+        scene,
+        camera
+    );
+
+}
+
+
+/* Start Three.js immediately */
+
+initThree();
+
+</script>
+
+</body>
+</html>
+
